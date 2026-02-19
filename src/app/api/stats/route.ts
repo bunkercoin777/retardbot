@@ -27,9 +27,9 @@ export async function GET() {
   const bestTrade = sells.length ? Math.max(...sells.map(t => t.pnlPercent || 0)) : 0
   const worstTrade = sells.length ? Math.min(...sells.map(t => t.pnlPercent || 0)) : 0
 
-  // Determine if bot is live: check for recent thinking logs (last 3 min)
+  // Determine if bot is live: check for recent thinking logs (last 10 min)
   const recentThinking = await prisma.rbThinking.findFirst({
-    where: { createdAt: { gte: new Date(Date.now() - 180000) } },
+    where: { createdAt: { gte: new Date(Date.now() - 600000) } },
     orderBy: { createdAt: 'desc' },
     select: { createdAt: true }
   })
