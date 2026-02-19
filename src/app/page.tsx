@@ -14,23 +14,22 @@ interface ThinkingLog {
 }
 interface Strategy { id: string; rule: string; source: string; addedAt: number }
 
-// ---- Mock live data (will be replaced with real API) ----
-const WALLET = 'retardbot.sol'
+const WALLET = '8CdCDJkDCjL1XJqEXbLzTdYDTaoeHgaof5VxawRS1f3h'
 const DEMO_THINKING: ThinkingLog[] = [
   { id: '1', timestamp: Date.now()-120000, type: 'scan', message: 'Scanning pump.fun... 847 tokens active. Filtering for 50%+ bonding with 8+ replies...' },
   { id: '2', timestamp: Date.now()-110000, type: 'scan', message: 'Found 23 candidates above threshold. Running dual-snapshot analysis (20s apart)...' },
-  { id: '3', timestamp: Date.now()-90000, type: 'analysis', message: 'Snapshot 1 complete. Top movers: PEPE2 (67%→?), DOGWIF (72%→?), BASED (81%→?)...' },
-  { id: '4', timestamp: Date.now()-70000, type: 'analysis', message: 'Snapshot 2: PEPE2 67→68% (+1.5%), DOGWIF 72→71% (-1.4%), BASED 81→88% (+8.6%!) 🔥' },
-  { id: '5', timestamp: Date.now()-65000, type: 'decision', message: 'BASED is accelerating hard. 88% bonding, 34 replies, +8.6% in 20s. This is a graduation play.' },
-  { id: '6', timestamp: Date.now()-60000, type: 'decision', message: 'Risk check: replies=34 ✅ acceleration=+8.6% ✅ bonding=88% ✅ market cap=$52k ✅' },
-  { id: '7', timestamp: Date.now()-55000, type: 'execute', message: 'BUYING $BASED — 0.15 SOL at 88% bonding. Setting TP: +20%, SL: -25%' },
-  { id: '8', timestamp: Date.now()-50000, type: 'result', message: '✅ BUY CONFIRMED: 0.15 SOL → 245,891,002 $BASED tokens. TX: 4xR7...mK9q' },
+  { id: '3', timestamp: Date.now()-90000, type: 'analysis', message: 'Snapshot 1 complete. Top movers: PEPE2 (67%->?), DOGWIF (72%->?), BASED (81%->?)...' },
+  { id: '4', timestamp: Date.now()-70000, type: 'analysis', message: 'Snapshot 2: PEPE2 67->68% (+1.5%), DOGWIF 72->71% (-1.4%), BASED 81->88% (+8.6%)' },
+  { id: '5', timestamp: Date.now()-65000, type: 'decision', message: 'BASED is accelerating hard. 88% bonding, 34 replies, +8.6% in 20s. Graduation play.' },
+  { id: '6', timestamp: Date.now()-60000, type: 'decision', message: 'Risk check: replies=34 [PASS] acceleration=+8.6% [PASS] bonding=88% [PASS] mcap=$52k [PASS]' },
+  { id: '7', timestamp: Date.now()-55000, type: 'execute', message: 'BUYING $BASED -- 0.15 SOL at 88% bonding. Setting TP: +20%, SL: -25%' },
+  { id: '8', timestamp: Date.now()-50000, type: 'result', message: 'BUY CONFIRMED: 0.15 SOL -> 245,891,002 $BASED tokens. TX: 4xR7...mK9q' },
   { id: '9', timestamp: Date.now()-30000, type: 'analysis', message: 'Monitoring $BASED... 91% bonding (+3.4%). Volume increasing. 4 new replies in 30s.' },
-  { id: '10', timestamp: Date.now()-15000, type: 'analysis', message: '$BASED at 96% bonding! Graduation imminent. Holding position...' },
-  { id: '11', timestamp: Date.now()-8000, type: 'result', message: '🎓 $BASED GRADUATED! Now trading on PumpSwap AMM. Price up +31% from entry.' },
-  { id: '12', timestamp: Date.now()-5000, type: 'execute', message: 'SELLING $BASED — taking profit at +31%. Sending sell transaction...' },
-  { id: '13', timestamp: Date.now()-3000, type: 'result', message: '✅ SELL CONFIRMED: 245,891,002 $BASED → 0.1965 SOL. PnL: +0.0465 SOL (+31%) 🟢' },
-  { id: '14', timestamp: Date.now()-1000, type: 'learn', message: '📝 NEW STRATEGY LEARNED: Tokens with 8%+ acceleration at 85%+ bonding and 30+ replies have 78% graduation rate. Adding to playbook.' },
+  { id: '10', timestamp: Date.now()-15000, type: 'analysis', message: '$BASED at 96% bonding. Graduation imminent. Holding position...' },
+  { id: '11', timestamp: Date.now()-8000, type: 'result', message: '$BASED GRADUATED. Now trading on PumpSwap AMM. Price up +31% from entry.' },
+  { id: '12', timestamp: Date.now()-5000, type: 'execute', message: 'SELLING $BASED -- taking profit at +31%. Sending sell transaction...' },
+  { id: '13', timestamp: Date.now()-3000, type: 'result', message: 'SELL CONFIRMED: 245,891,002 $BASED -> 0.1965 SOL. PnL: +0.0465 SOL (+31%)' },
+  { id: '14', timestamp: Date.now()-1000, type: 'learn', message: 'NEW RULE: Tokens with 8%+ acceleration at 85%+ bonding and 30+ replies have 78% graduation rate. Adding to playbook.' },
 ]
 
 const DEMO_TRADES: Trade[] = []
@@ -50,8 +49,8 @@ const TYPE_COLORS: Record<string, string> = {
   execute: '#00e676', result: '#00e676', learn: '#bb86fc', error: '#ff1744'
 }
 const TYPE_PREFIX: Record<string, string> = {
-  scan: '🔍', analysis: '📊', decision: '🧠', execute: '⚡',
-  result: '✓', learn: '📝', error: '❌'
+  scan: '[SCAN]', analysis: '[DATA]', decision: '[THINK]', execute: '[EXEC]',
+  result: '[OK]', learn: '[LEARN]', error: '[ERR]'
 }
 
 export default function Home() {
@@ -60,7 +59,6 @@ export default function Home() {
   const [visibleIdx, setVisibleIdx] = useState(0)
   const termRef = useRef<HTMLDivElement>(null)
 
-  // Simulate live typing effect
   useEffect(() => {
     if (visibleIdx >= DEMO_THINKING.length) return
     const delay = visibleIdx === 0 ? 500 : 800 + Math.random() * 2000
@@ -71,7 +69,6 @@ export default function Home() {
     return () => clearTimeout(timer)
   }, [visibleIdx])
 
-  // Auto-scroll terminal
   useEffect(() => {
     if (termRef.current) termRef.current.scrollTop = termRef.current.scrollHeight
   }, [thinking])
@@ -97,8 +94,8 @@ export default function Home() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ fontSize: 12, color: '#5a5e72', textAlign: 'right' }}>
-            <div style={{ fontFamily: 'monospace', color: '#8b8fa3' }}>wallet: funding...</div>
+          <div style={{ fontSize: 11, color: '#3a3d52', textAlign: 'right', fontFamily: 'monospace' }}>
+            {WALLET.slice(0, 4)}...{WALLET.slice(-4)}
           </div>
           <a href="/docs" style={{
             color: '#5a5e72', textDecoration: 'none', fontSize: 12,
@@ -143,7 +140,7 @@ export default function Home() {
               fontWeight: 700, fontSize: 12, cursor: 'pointer',
               textTransform: 'uppercase', letterSpacing: 1, fontFamily: 'monospace'
             }}>
-              {t === 'terminal' ? '> TERMINAL' : t === 'trades' ? '$ TRADES' : t === 'strategy' ? '🧠 BRAIN' : '⚡ COPY'}
+              {t === 'terminal' ? '> TERMINAL' : t === 'trades' ? '$ TRADES' : t === 'strategy' ? '# BRAIN' : '* COPY'}
             </button>
           ))}
         </div>
@@ -165,16 +162,15 @@ export default function Home() {
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
               <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840' }} />
-              <span style={{ marginLeft: 8, color: '#3a3d52', fontSize: 11 }}>retardbot v0.1 — live thinking feed</span>
+              <span style={{ marginLeft: 8, color: '#3a3d52', fontSize: 11 }}>retardbot v0.1 -- live thinking feed</span>
             </div>
 
-            {/* Terminal Content */}
             <div style={{ padding: '12px 16px' }}>
               <div style={{ color: '#3a3d52', marginBottom: 8 }}>
-                {'// retardbot.fun — AI memecoin trader'}<br/>
+                {'// retardbot.fun -- AI memecoin trader'}<br/>
                 {'// watching pump.fun 24/7. learning from every trade.'}<br/>
-                {'// wallet: funding...'}<br/>
-                {'// ─────────────────────────────────────────'}
+                {`// wallet: ${WALLET}`}<br/>
+                {'// -----------------------------------------------'}
               </div>
 
               {thinking.map(log => (
@@ -185,29 +181,28 @@ export default function Home() {
                   <span style={{ color: '#3a3d52', minWidth: 60, fontSize: 11 }}>
                     {new Date(log.timestamp).toLocaleTimeString('en-AU', { hour12: false })}
                   </span>
+                  <span style={{ color: TYPE_COLORS[log.type] || '#8b8fa3', minWidth: 55, fontSize: 12 }}>
+                    {TYPE_PREFIX[log.type]}
+                  </span>
                   <span style={{ color: TYPE_COLORS[log.type] || '#8b8fa3' }}>
-                    {TYPE_PREFIX[log.type]} {log.message}
+                    {log.message}
                   </span>
                 </div>
               ))}
 
-              {/* Blinking cursor */}
               {visibleIdx < DEMO_THINKING.length && (
                 <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                   <span style={{ color: '#3a3d52', minWidth: 60, fontSize: 11 }}>
                     {new Date().toLocaleTimeString('en-AU', { hour12: false })}
                   </span>
-                  <span style={{ color: '#00e676' }}>
-                    █<span style={{ animation: 'blink 1s infinite' }}></span>
-                  </span>
+                  <span style={{ color: '#00e676' }}>_</span>
                 </div>
               )}
 
               {visibleIdx >= DEMO_THINKING.length && (
                 <div style={{ marginTop: 16, color: '#3a3d52' }}>
-                  {'// waiting for next opportunity...'}
-                  <br/>
-                  <span style={{ color: '#00e676' }}>█</span>
+                  {'// waiting for next opportunity...'}<br/>
+                  <span style={{ color: '#00e676' }}>_</span>
                 </div>
               )}
             </div>
@@ -222,7 +217,7 @@ export default function Home() {
           }}>
             {DEMO_TRADES.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '80px 0' }}>
-                <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.3 }}>📊</div>
+                <div style={{ fontSize: 32, marginBottom: 16, color: '#1a1c28', fontFamily: 'monospace' }}>---</div>
                 <div style={{ color: '#3a3d52', fontFamily: 'monospace', fontSize: 14 }}>
                   No trades yet. Wallet needs funding.
                 </div>
@@ -268,12 +263,12 @@ export default function Home() {
             <div style={{ color: '#00e676', fontSize: 14, fontWeight: 700, marginBottom: 16 }}>
               {'// LEARNED STRATEGIES'}
               <br/>
-              <span style={{ color: '#3a3d52', fontSize: 12 }}>{'// Every winning trade teaches the bot something new'}</span>
+              <span style={{ color: '#3a3d52', fontSize: 12 }}>{'// every winning trade teaches the bot something new'}</span>
             </div>
 
             {DEMO_STRATEGIES.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 0' }}>
-                <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.3 }}>🧠</div>
+                <div style={{ fontSize: 32, marginBottom: 16, color: '#1a1c28' }}>---</div>
                 <div style={{ color: '#3a3d52', fontSize: 14 }}>
                   No strategies learned yet.
                 </div>
@@ -311,7 +306,7 @@ export default function Home() {
               <img src="/icon.jpg" alt="retardbot" style={{ width: 64, height: 64, borderRadius: 12, margin: '0 auto 20px' }} />
               <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Copy Trade retardbot</h2>
               <p style={{ color: '#5a5e72', fontSize: 14, marginBottom: 28, lineHeight: 1.6 }}>
-                Bot buys → you buy. Bot sells → you sell.<br/>
+                Bot buys, you buy. Bot sells, you sell.<br/>
                 Automatic. Real-time. Retarded.
               </p>
 
@@ -346,7 +341,7 @@ export default function Home() {
               </button>
 
               <div style={{ fontSize: 11, color: '#3a3d52', fontFamily: 'monospace' }}>
-                1% platform fee · non-custodial · you approve each trade
+                1% platform fee -- non-custodial -- you approve each trade
               </div>
 
               <div style={{ 
@@ -357,9 +352,9 @@ export default function Home() {
                   <span style={{ color: '#00e676' }}>1.</span> Connect your Solana wallet<br/>
                   <span style={{ color: '#00e676' }}>2.</span> Pick your trade size<br/>
                   <span style={{ color: '#00e676' }}>3.</span> Bot scans pump.fun 24/7<br/>
-                  <span style={{ color: '#00e676' }}>4.</span> Bot buys → your wallet auto-buys same token<br/>
-                  <span style={{ color: '#00e676' }}>5.</span> Bot sells → your wallet auto-sells<br/>
-                  <span style={{ color: '#00e676' }}>6.</span> Watch PnL. It&apos;s retarded but it tries.
+                  <span style={{ color: '#00e676' }}>4.</span> Bot buys -- your wallet auto-buys same token<br/>
+                  <span style={{ color: '#00e676' }}>5.</span> Bot sells -- your wallet auto-sells<br/>
+                  <span style={{ color: '#00e676' }}>6.</span> Watch PnL. It is retarded but it tries.
                 </div>
               </div>
             </div>
@@ -374,9 +369,10 @@ export default function Home() {
           <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 10 }}>
             <a href="https://x.com/retardbotfun" target="_blank" style={{ color: '#3a3d52', textDecoration: 'none', fontSize: 12, fontFamily: 'monospace' }}>twitter</a>
             <a href="https://pump.fun" target="_blank" style={{ color: '#3a3d52', textDecoration: 'none', fontSize: 12, fontFamily: 'monospace' }}>pump.fun</a>
+            <a href="/docs" style={{ color: '#3a3d52', textDecoration: 'none', fontSize: 12, fontFamily: 'monospace' }}>docs</a>
           </div>
           <p style={{ color: '#1a1c28', fontSize: 11, fontFamily: 'monospace' }}>
-            retardbot.fun — not financial advice. the bot is literally retarded.
+            retardbot.fun -- not financial advice. the bot is literally retarded.
           </p>
         </footer>
       </div>
