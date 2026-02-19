@@ -27,8 +27,16 @@ export async function GET() {
   const bestTrade = sells.length ? Math.max(...sells.map(t => t.pnlPercent || 0)) : 0
   const worstTrade = sells.length ? Math.min(...sells.map(t => t.pnlPercent || 0)) : 0
 
-  // Get bot state
-  const state = await prisma.rbBotState.findUnique({ where: { id: 'singleton' } })
+  // Get bot state via raw query to avoid caching
+  const stateRows = await prisma.$queryRawUnsafe<{isLive: boolean, balance: number}[]>(
+    'SELECT "isLive", balance FROM rb_bot_state WHERE id = $1', 'singleton'
+  )
+  const state = stateRows[0]
+
+  // Also consider "live" if there's a thinking log in the last 2 minutes
+  const recentThinking = await prisma.rbThinking.count({
+    where: { createdAt: { gte: new Date(Date.now() - 120000) } }
+  })
 
   return NextResponse.json({
     wallet: WALLET,
@@ -39,6 +47,6 @@ export async function GET() {
     totalPnl: Math.round(totalPnl * 10000) / 10000,
     biggestWin: Math.round(bestTrade * 10) / 10,
     biggestLoss: Math.round(worstTrade * 10) / 10,
-    isLive: state?.isLive || false
+    isLive: (state?.isLive || false) || recentThinking > 0
   })
 }
