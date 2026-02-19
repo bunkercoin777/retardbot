@@ -1,0 +1,10 @@
+import pg from 'pg';
+const c = new pg.Client('postgresql://neondb_owner:npg_qPyd46hcsrFt@ep-green-sea-aipph0um-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require');
+await c.connect();
+const state = await c.query('SELECT * FROM rb_bot_state');
+console.log('BOT STATE:', JSON.stringify(state.rows));
+const recent = await c.query("SELECT COUNT(*) as cnt FROM rb_thinking WHERE \"createdAt\" > NOW() - INTERVAL '2 minutes'");
+console.log('RECENT THINKING (2min):', recent.rows[0].cnt);
+const latest = await c.query('SELECT type, message, "createdAt" FROM rb_thinking ORDER BY "createdAt" DESC LIMIT 3');
+console.log('LATEST:', JSON.stringify(latest.rows, null, 2));
+await c.end();
