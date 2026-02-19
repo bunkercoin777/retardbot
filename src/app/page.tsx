@@ -105,9 +105,9 @@ export default function Home() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ fontSize: 11, color: '#3a3d52', fontFamily: 'monospace' }}>
+          <a href={`https://solscan.io/account/${wallet}`} target="_blank" style={{ fontSize: 11, color: '#3a3d52', fontFamily: 'monospace', textDecoration: 'none' }}>
             {wallet.slice(0, 4)}...{wallet.slice(-4)}
-          </div>
+          </a>
           <a href="/docs" style={{ color: '#5a5e72', textDecoration: 'none', fontSize: 12, fontFamily: 'monospace', padding: '8px 12px' }}>docs</a>
           <button style={{ background: '#00e676', color: '#000', fontWeight: 800, border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontSize: 13 }}>Copy Trade</button>
         </div>
@@ -169,7 +169,7 @@ export default function Home() {
               <div style={{ color: '#3a3d52', marginBottom: 8 }}>
                 {'// retardbot.fun -- AI memecoin trader'}<br/>
                 {'// watching pump.fun 24/7. learning from every trade.'}<br/>
-                {`// wallet: ${wallet}`}<br/>
+                {'// wallet: '}<a href={`https://solscan.io/account/${wallet}`} target="_blank" style={{ color: '#5a5e72', textDecoration: 'underline' }}>{wallet}</a><br/>
                 {'// -----------------------------------------------'}
               </div>
 
@@ -289,13 +289,29 @@ export default function Home() {
             background: '#0d0e14', border: '1px solid #1a1c28', borderTop: 'none',
             borderRadius: '0 0 8px 8px', minHeight: 500, padding: 20
           }}>
-            <div style={{ maxWidth: 480, margin: '40px auto', textAlign: 'center' }}>
-              <img src="/icon.jpg" alt="retardbot" style={{ width: 64, height: 64, borderRadius: 12, margin: '0 auto 20px' }} />
-              <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Copy Trade retardbot</h2>
-              <p style={{ color: '#5a5e72', fontSize: 14, marginBottom: 28, lineHeight: 1.6 }}>
-                Bot buys, you buy. Bot sells, you sell.<br/>Automatic. Real-time. Retarded.
-              </p>
-              <div style={{ background: '#12141c', borderRadius: 10, padding: 20, border: '1px solid #1a1c28', marginBottom: 20, textAlign: 'left' }}>
+            <div style={{ maxWidth: 520, margin: '32px auto' }}>
+              <div style={{ textAlign: 'center', marginBottom: 28 }}>
+                <img src="/icon.jpg" alt="retardbot" style={{ width: 56, height: 56, borderRadius: 12, margin: '0 auto 16px' }} />
+                <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Copy Trade retardbot</h2>
+                <p style={{ color: '#5a5e72', fontSize: 14, lineHeight: 1.6 }}>
+                  Bot buys, you buy. Bot sells, you sell. Automatic. Real-time. Retarded.
+                </p>
+              </div>
+
+              {/* How it works */}
+              <div style={{ background: '#12141c', borderRadius: 10, padding: 20, border: '1px solid #1a1c28', marginBottom: 16 }}>
+                <div style={{ fontFamily: 'monospace', fontSize: 12, color: '#5a5e72', lineHeight: 2.2 }}>
+                  <span style={{ color: '#00e676' }}>1.</span> Connect your Solana wallet<br/>
+                  <span style={{ color: '#00e676' }}>2.</span> Set your trade size (how much SOL per trade)<br/>
+                  <span style={{ color: '#00e676' }}>3.</span> Bot scans pump.fun 24/7 for opportunities<br/>
+                  <span style={{ color: '#00e676' }}>4.</span> Bot buys -- your wallet auto-mirrors the same token<br/>
+                  <span style={{ color: '#00e676' }}>5.</span> Bot sells -- your wallet auto-sells<br/>
+                  <span style={{ color: '#00e676' }}>6.</span> All bot profits are recycled back into trading
+                </div>
+              </div>
+
+              {/* Trade size selector */}
+              <div style={{ background: '#12141c', borderRadius: 10, padding: 20, border: '1px solid #1a1c28', marginBottom: 16, textAlign: 'left' }}>
                 <div style={{ fontSize: 11, color: '#3a3d52', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, fontFamily: 'monospace' }}>Trade size per position</div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {[0.05, 0.1, 0.25, 0.5, 1.0].map(amt => (
@@ -309,10 +325,44 @@ export default function Home() {
                   ))}
                 </div>
               </div>
-              <button style={{ width: '100%', padding: '14px', borderRadius: 10, background: '#00e676', color: '#000', fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer', marginBottom: 12 }}>
+
+              {/* CTA */}
+              <button style={{ width: '100%', padding: '14px', borderRadius: 10, background: '#00e676', color: '#000', fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer', marginBottom: 16 }}>
                 Connect Wallet & Start Copying
               </button>
-              <div style={{ fontSize: 11, color: '#3a3d52', fontFamily: 'monospace' }}>1% platform fee -- non-custodial -- you approve each trade</div>
+
+              {/* Profit recycling */}
+              <div style={{ background: '#12141c', borderRadius: 10, padding: 20, border: '1px solid #1a1c28', marginBottom: 16 }}>
+                <div style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#00e676', marginBottom: 10 }}>// PROFIT RECYCLING</div>
+                <div style={{ fontFamily: 'monospace', fontSize: 12, color: '#8b8fa3', lineHeight: 1.8 }}>
+                  100% of bot profits are recycled back into the trading bankroll.
+                  The bot never withdraws. Every win makes the next trade bigger.
+                  Compounding returns, fully transparent on-chain.
+                </div>
+                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                  <a href={`https://solscan.io/account/${wallet}`} target="_blank" style={{
+                    flex: 1, textAlign: 'center', padding: '8px', borderRadius: 6,
+                    background: '#1a1c28', border: '1px solid #2a2d3e',
+                    color: '#8b8fa3', textDecoration: 'none', fontFamily: 'monospace', fontSize: 11
+                  }}>verify on solscan</a>
+                </div>
+              </div>
+
+              {/* Fees */}
+              <div style={{ display: 'flex', gap: 12, fontFamily: 'monospace' }}>
+                <div style={{ flex: 1, background: '#12141c', borderRadius: 8, padding: 14, border: '1px solid #1a1c28', textAlign: 'center' }}>
+                  <div style={{ fontSize: 9, color: '#3a3d52', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>platform fee</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>1%</div>
+                </div>
+                <div style={{ flex: 1, background: '#12141c', borderRadius: 8, padding: 14, border: '1px solid #1a1c28', textAlign: 'center' }}>
+                  <div style={{ fontSize: 9, color: '#3a3d52', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>custody</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>non-custodial</div>
+                </div>
+                <div style={{ flex: 1, background: '#12141c', borderRadius: 8, padding: 14, border: '1px solid #1a1c28', textAlign: 'center' }}>
+                  <div style={{ fontSize: 9, color: '#3a3d52', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>profits</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#00e676' }}>100% recycled</div>
+                </div>
+              </div>
             </div>
           </div>
         )}
