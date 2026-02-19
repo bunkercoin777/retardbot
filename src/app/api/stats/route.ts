@@ -1,6 +1,9 @@
 import { prisma } from '@/lib/db'
 import { NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const WALLET = process.env.BOT_WALLET || '8CdCDJkDCjL1XJqEXbLzTdYDTaoeHgaof5VxawRS1f3h'
 const HELIUS = `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`
 
