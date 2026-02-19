@@ -178,6 +178,10 @@ const config = {
         "fromEnvVar": null,
         "value": "windows",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "rhel-openssl-3.0.x"
       }
     ],
     "previewFeatures": [],
@@ -194,6 +198,7 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -202,8 +207,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel RbTrade {\n  id              String   @id @default(cuid())\n  action          String\n  tokenMint       String\n  tokenSymbol     String\n  tokenName       String\n  amountSol       Float\n  tokenAmount     String\n  bondingProgress Float?\n  marketCap       Float?\n  replies         Int?\n  pnl             Float?\n  pnlPercent      Float?\n  txSignature     String?\n  reasoning       String?\n  createdAt       DateTime @default(now())\n\n  @@map(\"rb_trades\")\n}\n\nmodel RbThinking {\n  id        String   @id @default(cuid())\n  type      String\n  message   String\n  createdAt DateTime @default(now())\n\n  @@map(\"rb_thinking\")\n}\n\nmodel RbStrategy {\n  id        String   @id @default(cuid())\n  rule      String\n  source    String\n  winRate   Float?\n  createdAt DateTime @default(now())\n\n  @@map(\"rb_strategies\")\n}\n\nmodel RbBotState {\n  id        String   @id @default(\"singleton\")\n  wallet    String\n  balance   Float    @default(0)\n  isLive    Boolean  @default(false)\n  updatedAt DateTime @updatedAt\n\n  @@map(\"rb_bot_state\")\n}\n",
-  "inlineSchemaHash": "5a8afe5f0d1f6bbd3fd675c34841f24930a261b8b55989bb664568e95101852b",
+  "inlineSchema": "generator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../src/generated/prisma\"\n  binaryTargets = [\"native\", \"rhel-openssl-3.0.x\"]\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel RbTrade {\n  id              String   @id @default(cuid())\n  action          String\n  tokenMint       String\n  tokenSymbol     String\n  tokenName       String\n  amountSol       Float\n  tokenAmount     String\n  bondingProgress Float?\n  marketCap       Float?\n  replies         Int?\n  pnl             Float?\n  pnlPercent      Float?\n  txSignature     String?\n  reasoning       String?\n  createdAt       DateTime @default(now())\n\n  @@map(\"rb_trades\")\n}\n\nmodel RbThinking {\n  id        String   @id @default(cuid())\n  type      String\n  message   String\n  createdAt DateTime @default(now())\n\n  @@map(\"rb_thinking\")\n}\n\nmodel RbStrategy {\n  id        String   @id @default(cuid())\n  rule      String\n  source    String\n  winRate   Float?\n  createdAt DateTime @default(now())\n\n  @@map(\"rb_strategies\")\n}\n\nmodel RbBotState {\n  id        String   @id @default(\"singleton\")\n  wallet    String\n  balance   Float    @default(0)\n  isLive    Boolean  @default(false)\n  updatedAt DateTime @updatedAt\n\n  @@map(\"rb_bot_state\")\n}\n",
+  "inlineSchemaHash": "9751cfee6960eb7db806574300aaabf3822f510d94272730047a08748b6819b7",
   "copyEngine": true
 }
 config.dirname = '/'
