@@ -7,6 +7,11 @@ interface Trade {
   bondingProgress: number|null; marketCap: number|null; replies: number|null
   txSignature: string|null; reasoning: string|null; createdAt: string
 }
+interface CopyableTrade {
+  id: string; tokenSymbol: string; tokenName: string; tokenMint: string
+  amountSol: number; bondingProgress: number|null; txSignature: string|null
+  reasoning: string|null; createdAt: string; sold: boolean; sellPnl: number|null
+}
 interface ThinkingLog { id: string; type: string; message: string; createdAt: string }
 interface Strategy { id: string; rule: string; source: string; createdAt: string }
 interface Stats {
@@ -37,6 +42,8 @@ export default function Home() {
   const [trades, setTrades] = useState<Trade[]>([])
   const [thinking, setThinking] = useState<ThinkingLog[]>([])
   const [strategies, setStrategies] = useState<Strategy[]>([])
+  const [copyTrades, setCopyTrades] = useState<CopyableTrade[]>([])
+  const [walletCopied, setWalletCopied] = useState(false)
   const termRef = useRef<HTMLDivElement>(null)
   const lastThinkingRef = useRef<string>('')
 
@@ -69,10 +76,16 @@ export default function Home() {
     return () => clearInterval(i)
   }, [])
 
-  // Poll trades & strategies when on those tabs
+  // Poll trades & strategies & copy trades when on those tabs
   useEffect(() => {
     if (tab === 'trades') fetch('/api/trades').then(r => r.json()).then(d => setTrades(d.trades || [])).catch(() => {})
     if (tab === 'strategy') fetch('/api/strategy').then(r => r.json()).then(d => setStrategies(d.strategies || [])).catch(() => {})
+    if (tab === 'copytrade') {
+      const load = () => fetch('/api/copy/trades').then(r => r.json()).then(d => setCopyTrades(d.trades || [])).catch(() => {})
+      load()
+      const i = setInterval(load, 5000)
+      return () => clearInterval(i)
+    }
   }, [tab])
 
   // Auto-scroll terminal
@@ -109,7 +122,7 @@ export default function Home() {
             {wallet.slice(0, 4)}...{wallet.slice(-4)}
           </a>
           <a href="/docs" style={{ color: '#5a5e72', textDecoration: 'none', fontSize: 12, fontFamily: 'monospace', padding: '8px 12px' }}>docs</a>
-          <button style={{ background: '#00e676', color: '#000', fontWeight: 800, border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontSize: 13 }}>Copy Trade</button>
+          <button onClick={() => setTab('copytrade')} style={{ background: '#00e676', color: '#000', fontWeight: 800, border: 'none', borderRadius: 8, padding: '8px 18px', cursor: 'pointer', fontSize: 13 }}>Copy Trade</button>
         </div>
       </nav>
 
@@ -289,78 +302,153 @@ export default function Home() {
             background: '#0d0e14', border: '1px solid #1a1c28', borderTop: 'none',
             borderRadius: '0 0 8px 8px', minHeight: 500, padding: 20
           }}>
-            <div style={{ maxWidth: 520, margin: '32px auto' }}>
-              <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                <img src="/icon.jpg" alt="retardbot" style={{ width: 56, height: 56, borderRadius: 12, margin: '0 auto 16px' }} />
-                <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Copy Trade retardbot</h2>
-                <p style={{ color: '#5a5e72', fontSize: 14, lineHeight: 1.6 }}>
-                  Bot buys, you buy. Bot sells, you sell. Automatic. Real-time. Retarded.
-                </p>
+            <div style={{ maxWidth: 640, margin: '24px auto' }}>
+              {/* Header */}
+              <div style={{ textAlign: 'center', marginBottom: 24, fontFamily: 'monospace' }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#00e676', marginBottom: 6 }}>// COPY TRADE</div>
+                <div style={{ color: '#5a5e72', fontSize: 12 }}>copy the bot wallet. mirror its trades from your own terminal.</div>
               </div>
 
-              {/* How it works */}
+              {/* Bot Wallet Card */}
               <div style={{ background: '#12141c', borderRadius: 10, padding: 20, border: '1px solid #1a1c28', marginBottom: 16 }}>
-                <div style={{ fontFamily: 'monospace', fontSize: 12, color: '#5a5e72', lineHeight: 2.2 }}>
-                  <span style={{ color: '#00e676' }}>1.</span> Connect your Solana wallet<br/>
-                  <span style={{ color: '#00e676' }}>2.</span> Set your trade size (how much SOL per trade)<br/>
-                  <span style={{ color: '#00e676' }}>3.</span> Bot scans pump.fun 24/7 for opportunities<br/>
-                  <span style={{ color: '#00e676' }}>4.</span> Bot buys -- your wallet auto-mirrors the same token<br/>
-                  <span style={{ color: '#00e676' }}>5.</span> Bot sells -- your wallet auto-sells<br/>
-                  <span style={{ color: '#00e676' }}>6.</span> All bot profits are recycled back into trading
+                <div style={{ fontSize: 9, color: '#3a3d52', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10, fontFamily: 'monospace' }}>bot wallet address</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <code style={{ flex: 1, fontSize: 13, color: '#00e676', background: '#0d0e14', padding: '10px 14px', borderRadius: 6, border: '1px solid #1a1c28', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                    {wallet}
+                  </code>
+                  <button onClick={() => { navigator.clipboard.writeText(wallet); setWalletCopied(true); setTimeout(() => setWalletCopied(false), 2000) }} style={{
+                    padding: '10px 16px', borderRadius: 6, background: walletCopied ? '#00e676' : '#1a1c28',
+                    color: walletCopied ? '#000' : '#8b8fa3', border: '1px solid #2a2d3e',
+                    fontSize: 12, cursor: 'pointer', fontFamily: 'monospace', fontWeight: 700, whiteSpace: 'nowrap'
+                  }}>
+                    {walletCopied ? 'COPIED' : 'COPY'}
+                  </button>
                 </div>
-              </div>
-
-              {/* Trade size selector */}
-              <div style={{ background: '#12141c', borderRadius: 10, padding: 20, border: '1px solid #1a1c28', marginBottom: 16, textAlign: 'left' }}>
-                <div style={{ fontSize: 11, color: '#3a3d52', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12, fontFamily: 'monospace' }}>Trade size per position</div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {[0.05, 0.1, 0.25, 0.5, 1.0].map(amt => (
-                    <button key={amt} style={{
-                      flex: 1, padding: '10px 0', borderRadius: 6,
-                      background: amt === 0.1 ? '#00e676' : '#1a1c28',
-                      color: amt === 0.1 ? '#000' : '#5a5e72',
-                      border: amt === 0.1 ? 'none' : '1px solid #2a2d3e',
-                      fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'monospace'
-                    }}>{amt}</button>
-                  ))}
-                </div>
-              </div>
-
-              {/* CTA */}
-              <button style={{ width: '100%', padding: '14px', borderRadius: 10, background: '#00e676', color: '#000', fontWeight: 800, fontSize: 15, border: 'none', cursor: 'pointer', marginBottom: 16 }}>
-                Connect Wallet & Start Copying
-              </button>
-
-              {/* Profit recycling */}
-              <div style={{ background: '#12141c', borderRadius: 10, padding: 20, border: '1px solid #1a1c28', marginBottom: 16 }}>
-                <div style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#00e676', marginBottom: 10 }}>// PROFIT RECYCLING</div>
-                <div style={{ fontFamily: 'monospace', fontSize: 12, color: '#8b8fa3', lineHeight: 1.8 }}>
-                  100% of bot profits are recycled back into the trading bankroll.
-                  The bot never withdraws. Every win makes the next trade bigger.
-                  Compounding returns, fully transparent on-chain.
-                </div>
-                <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   <a href={`https://solscan.io/account/${wallet}`} target="_blank" style={{
                     flex: 1, textAlign: 'center', padding: '8px', borderRadius: 6,
                     background: '#1a1c28', border: '1px solid #2a2d3e',
                     color: '#8b8fa3', textDecoration: 'none', fontFamily: 'monospace', fontSize: 11
-                  }}>verify on solscan</a>
+                  }}>solscan</a>
+                  <a href={`https://pump.fun/profile/${wallet}`} target="_blank" style={{
+                    flex: 1, textAlign: 'center', padding: '8px', borderRadius: 6,
+                    background: '#1a1c28', border: '1px solid #2a2d3e',
+                    color: '#8b8fa3', textDecoration: 'none', fontFamily: 'monospace', fontSize: 11
+                  }}>pump.fun profile</a>
+                  <a href={`https://photon-sol.tinyastro.io/en/lp/${wallet}`} target="_blank" style={{
+                    flex: 1, textAlign: 'center', padding: '8px', borderRadius: 6,
+                    background: '#1a1c28', border: '1px solid #2a2d3e',
+                    color: '#8b8fa3', textDecoration: 'none', fontFamily: 'monospace', fontSize: 11
+                  }}>photon</a>
                 </div>
               </div>
 
-              {/* Fees */}
-              <div style={{ display: 'flex', gap: 12, fontFamily: 'monospace' }}>
+              {/* How to Copy */}
+              <div style={{ background: '#12141c', borderRadius: 10, padding: 20, border: '1px solid #1a1c28', marginBottom: 16 }}>
+                <div style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#00e676', marginBottom: 12 }}>// HOW TO COPY TRADE</div>
+                <div style={{ fontFamily: 'monospace', fontSize: 12, color: '#5a5e72', lineHeight: 2.2 }}>
+                  <span style={{ color: '#00e676' }}>1.</span> copy the bot wallet above<br/>
+                  <span style={{ color: '#00e676' }}>2.</span> paste it into your copy trade tool (GMGN, Photon, BullX, etc)<br/>
+                  <span style={{ color: '#00e676' }}>3.</span> set your trade size and slippage<br/>
+                  <span style={{ color: '#00e676' }}>4.</span> when the bot buys, your tool auto-mirrors the trade<br/>
+                  <span style={{ color: '#00e676' }}>5.</span> watch the terminal tab for live thinking and reasoning
+                </div>
+              </div>
+
+              {/* Recent Bot Trades */}
+              <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#3a3d52', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1.5 }}>
+                recent bot trades (last 24h)
+              </div>
+
+              {copyTrades.length === 0 ? (
+                <div style={{ background: '#12141c', borderRadius: 10, padding: 40, border: '1px solid #1a1c28', textAlign: 'center' }}>
+                  <div style={{ color: '#3a3d52', fontFamily: 'monospace', fontSize: 13 }}>no trades yet. waiting for bot to buy...</div>
+                  <div style={{ color: '#2a2d3e', fontFamily: 'monospace', fontSize: 11, marginTop: 8 }}>trades appear here within seconds of execution</div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {copyTrades.map(ct => (
+                    <div key={ct.id} style={{
+                      background: '#12141c', borderRadius: 8, padding: 14,
+                      border: '1px solid #1a1c28',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, fontFamily: 'monospace' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ color: '#00e676', fontWeight: 700, fontSize: 14 }}>${ct.tokenSymbol}</span>
+                          <span style={{ color: '#3a3d52', fontSize: 11 }}>{ct.tokenName}</span>
+                          {ct.sold && (
+                            <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: ct.sellPnl !== null && ct.sellPnl >= 0 ? 'rgba(0,230,118,0.1)' : 'rgba(255,23,68,0.1)', color: ct.sellPnl !== null && ct.sellPnl >= 0 ? '#00e676' : '#ff1744' }}>
+                              {ct.sellPnl !== null ? `${ct.sellPnl >= 0 ? '+' : ''}${ct.sellPnl.toFixed(1)}%` : 'SOLD'}
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ color: '#3a3d52', fontSize: 11, fontFamily: 'monospace' }}>{timeAgo(ct.createdAt)}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#5a5e72', fontFamily: 'monospace', marginBottom: 8 }}>
+                        <span>size: {ct.amountSol} SOL</span>
+                        {ct.bondingProgress && <span>bonding: {ct.bondingProgress}%</span>}
+                      </div>
+                      {ct.reasoning && (
+                        <div style={{ fontSize: 11, color: '#5a5e72', fontFamily: 'monospace', background: '#0d0e14', padding: '8px 10px', borderRadius: 4, marginBottom: 8, lineHeight: 1.5 }}>
+                          {ct.reasoning}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <a href={`https://pump.fun/coin/${ct.tokenMint}`} target="_blank" style={{
+                          padding: '6px 12px', borderRadius: 4, background: '#1a1c28', border: '1px solid #2a2d3e',
+                          color: '#8b8fa3', textDecoration: 'none', fontFamily: 'monospace', fontSize: 10
+                        }}>pump.fun</a>
+                        {ct.txSignature && (
+                          <a href={`https://solscan.io/tx/${ct.txSignature}`} target="_blank" style={{
+                            padding: '6px 12px', borderRadius: 4, background: '#1a1c28', border: '1px solid #2a2d3e',
+                            color: '#8b8fa3', textDecoration: 'none', fontFamily: 'monospace', fontSize: 10
+                          }}>tx</a>
+                        )}
+                        <button onClick={() => { navigator.clipboard.writeText(ct.tokenMint) }} style={{
+                          padding: '6px 12px', borderRadius: 4, background: '#1a1c28', border: '1px solid #2a2d3e',
+                          color: '#8b8fa3', fontFamily: 'monospace', fontSize: 10, cursor: 'pointer'
+                        }}>copy CA</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Recommended Tools */}
+              <div style={{ background: '#12141c', borderRadius: 10, padding: 16, border: '1px solid #1a1c28', marginTop: 16, fontFamily: 'monospace' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#00e676', marginBottom: 10 }}>// RECOMMENDED COPY TRADE TOOLS</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    { name: 'GMGN', url: 'https://gmgn.ai', desc: 'paste wallet, set auto-copy' },
+                    { name: 'Photon', url: 'https://photon-sol.tinyastro.io', desc: 'copy trade tab, add wallet' },
+                    { name: 'BullX', url: 'https://bullx.io', desc: 'wallet tracker + auto-buy' },
+                    { name: 'Trojan Bot', url: 'https://t.me/solaborgg_bot', desc: 'telegram bot, /copy command' },
+                  ].map(tool => (
+                    <a key={tool.name} href={tool.url} target="_blank" style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '8px 12px', borderRadius: 6, background: '#0d0e14',
+                      border: '1px solid #1a1c28', textDecoration: 'none',
+                    }}>
+                      <span style={{ color: '#c8cad8', fontSize: 12 }}>{tool.name}</span>
+                      <span style={{ color: '#3a3d52', fontSize: 11 }}>{tool.desc}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* Info Cards */}
+              <div style={{ display: 'flex', gap: 12, fontFamily: 'monospace', marginTop: 16 }}>
                 <div style={{ flex: 1, background: '#12141c', borderRadius: 8, padding: 14, border: '1px solid #1a1c28', textAlign: 'center' }}>
-                  <div style={{ fontSize: 9, color: '#3a3d52', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>platform fee</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>1%</div>
+                  <div style={{ fontSize: 9, color: '#3a3d52', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>model</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>non-custodial</div>
                 </div>
                 <div style={{ flex: 1, background: '#12141c', borderRadius: 8, padding: 14, border: '1px solid #1a1c28', textAlign: 'center' }}>
-                  <div style={{ fontSize: 9, color: '#3a3d52', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>custody</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>non-custodial</div>
+                  <div style={{ fontSize: 9, color: '#3a3d52', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>bot profits</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#00e676' }}>100% recycled</div>
                 </div>
                 <div style={{ flex: 1, background: '#12141c', borderRadius: 8, padding: 14, border: '1px solid #1a1c28', textAlign: 'center' }}>
-                  <div style={{ fontSize: 9, color: '#3a3d52', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>profits</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#00e676' }}>100% recycled</div>
+                  <div style={{ fontSize: 9, color: '#3a3d52', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>on-chain</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>fully transparent</div>
                 </div>
               </div>
             </div>
