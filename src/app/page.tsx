@@ -80,8 +80,18 @@ export default function Home() {
 
   // Poll trades & strategies & copy trades when on those tabs
   useEffect(() => {
-    if (tab === 'trades') fetch('/api/trades').then(r => r.json()).then(d => setTrades(d.trades || [])).catch(() => {})
-    if (tab === 'strategy') fetch(`/api/strategy?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => { setStrategies(d.strategies || []); setBrainTrades(d.trades || []) }).catch(() => {})
+    if (tab === 'trades') {
+      const loadTrades = () => fetch(`/api/trades?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => setTrades(d.trades || [])).catch(() => {})
+      loadTrades()
+      const i = setInterval(loadTrades, 10000)
+      return () => clearInterval(i)
+    }
+    if (tab === 'strategy') {
+      const loadBrain = () => fetch(`/api/strategy?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => { setStrategies(d.strategies || []); setBrainTrades(d.trades || []) }).catch(() => {})
+      loadBrain()
+      const i = setInterval(loadBrain, 10000)
+      return () => clearInterval(i)
+    }
     if (tab === 'copytrade') {
       const load = () => fetch('/api/copy/trades').then(r => r.json()).then(d => setCopyTrades(d.trades || [])).catch(() => {})
       load()
