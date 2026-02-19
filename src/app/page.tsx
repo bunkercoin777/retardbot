@@ -14,6 +14,7 @@ interface CopyableTrade {
 }
 interface ThinkingLog { id: string; type: string; message: string; createdAt: string }
 interface Strategy { id: string; rule: string; source: string; createdAt: string }
+interface BrainTrade { id: string; action: string; tokenSymbol: string; amountSol: number; pnl: number|null; pnlPercent: number|null; reasoning: string; bondingProgress: number|null; replies: number|null; createdAt: string }
 interface Stats {
   wallet: string; balance: number; totalTrades: number; wins: number; losses: number
   winRate: number; totalPnl: number; biggestWin: number; biggestLoss: number; isLive: boolean
@@ -42,6 +43,7 @@ export default function Home() {
   const [trades, setTrades] = useState<Trade[]>([])
   const [thinking, setThinking] = useState<ThinkingLog[]>([])
   const [strategies, setStrategies] = useState<Strategy[]>([])
+  const [brainTrades, setBrainTrades] = useState<BrainTrade[]>([])
   const [copyTrades, setCopyTrades] = useState<CopyableTrade[]>([])
   const [walletCopied, setWalletCopied] = useState(false)
   const termRef = useRef<HTMLDivElement>(null)
@@ -79,7 +81,7 @@ export default function Home() {
   // Poll trades & strategies & copy trades when on those tabs
   useEffect(() => {
     if (tab === 'trades') fetch('/api/trades').then(r => r.json()).then(d => setTrades(d.trades || [])).catch(() => {})
-    if (tab === 'strategy') fetch('/api/strategy').then(r => r.json()).then(d => setStrategies(d.strategies || [])).catch(() => {})
+    if (tab === 'strategy') fetch(`/api/strategy?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(d => { setStrategies(d.strategies || []); setBrainTrades(d.trades || []) }).catch(() => {})
     if (tab === 'copytrade') {
       const load = () => fetch('/api/copy/trades').then(r => r.json()).then(d => setCopyTrades(d.trades || [])).catch(() => {})
       load()
@@ -268,20 +270,17 @@ export default function Home() {
             background: '#0d0e14', border: '1px solid #1a1c28', borderTop: 'none',
             borderRadius: '0 0 8px 8px', minHeight: 500, padding: 20, fontFamily: 'monospace'
           }}>
+            {/* Learned Rules */}
             <div style={{ color: '#00e676', fontSize: 14, fontWeight: 700, marginBottom: 16 }}>
               {'// LEARNED STRATEGIES'}<br/>
               <span style={{ color: '#3a3d52', fontSize: 12 }}>{'// every winning trade teaches the bot something new'}</span>
             </div>
             {strategies.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '60px 0' }}>
-                <div style={{ fontSize: 32, marginBottom: 16, color: '#1a1c28' }}>---</div>
-                <div style={{ color: '#3a3d52', fontSize: 14 }}>No strategies learned yet.</div>
-                <div style={{ color: '#2a2d3e', fontSize: 12, marginTop: 8 }}>
-                  When the bot profits on a trade, it extracts what worked and adds it here.
-                </div>
+              <div style={{ padding: '20px 0 30px', textAlign: 'center' }}>
+                <div style={{ color: '#3a3d52', fontSize: 13 }}>no strategies learned yet. waiting for profitable trades...</div>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
                 {strategies.map((s, i) => (
                   <div key={s.id} style={{ padding: 14, background: '#12141c', borderRadius: 8, borderLeft: '3px solid #00e676' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -289,6 +288,42 @@ export default function Home() {
                       <span style={{ color: '#3a3d52', fontSize: 11 }}>from ${s.source} -- {timeAgo(s.createdAt)}</span>
                     </div>
                     <div style={{ color: '#c8cad8', fontSize: 13, lineHeight: 1.5 }}>{s.rule}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Trade Reasoning */}
+            <div style={{ color: '#ffab00', fontSize: 14, fontWeight: 700, marginBottom: 16 }}>
+              {'// TRADE REASONING'}<br/>
+              <span style={{ color: '#3a3d52', fontSize: 12 }}>{'// why the bot entered and exited each position'}</span>
+            </div>
+            {brainTrades.length === 0 ? (
+              <div style={{ padding: '20px 0', textAlign: 'center' }}>
+                <div style={{ color: '#3a3d52', fontSize: 13 }}>no trades yet.</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {brainTrades.map(t => (
+                  <div key={t.id} style={{ padding: 12, background: '#12141c', borderRadius: 8, borderLeft: `3px solid ${t.action === 'buy' ? '#ffab00' : t.pnl !== null && t.pnl >= 0 ? '#00e676' : '#ff1744'}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: t.action === 'buy' ? '#ffab00' : '#bb86fc', fontSize: 11, fontWeight: 700 }}>{t.action.toUpperCase()}</span>
+                        <span style={{ color: '#00e676', fontWeight: 700, fontSize: 13 }}>${t.tokenSymbol}</span>
+                        <span style={{ color: '#5a5e72', fontSize: 11 }}>{t.amountSol} SOL</span>
+                        {t.bondingProgress && <span style={{ color: '#3a3d52', fontSize: 11 }}>{t.bondingProgress}% bonding</span>}
+                        {t.replies && <span style={{ color: '#3a3d52', fontSize: 11 }}>{t.replies} replies</span>}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {t.pnlPercent !== null && (
+                          <span style={{ color: t.pnlPercent >= 0 ? '#00e676' : '#ff1744', fontSize: 12, fontWeight: 700 }}>
+                            {t.pnlPercent >= 0 ? '+' : ''}{t.pnlPercent.toFixed(1)}%
+                          </span>
+                        )}
+                        <span style={{ color: '#3a3d52', fontSize: 10 }}>{timeAgo(t.createdAt)}</span>
+                      </div>
+                    </div>
+                    <div style={{ color: '#8b8fa3', fontSize: 12, lineHeight: 1.5 }}>{t.reasoning}</div>
                   </div>
                 ))}
               </div>

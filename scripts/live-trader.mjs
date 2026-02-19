@@ -86,12 +86,30 @@ async function sell(tokenMint, tokenAmount) {
 }
 
 async function getTokenBalance(tokenMint) {
-  const res = await fetch(RPC, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'searchAssets', params: { ownerAddress: WALLET.publicKey.toBase58(), tokenType: 'fungible' } })
-  }).then(r => r.json());
-  const item = res.result?.items?.find(a => a.id === tokenMint);
-  return item?.token_info?.balance || '0';
+  // Method 1: getTokenAccountsByOwner (faster, no indexing delay)
+  try {
+    const res = await fetch(RPC, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getTokenAccountsByOwner',
+        params: [WALLET.publicKey.toBase58(), { mint: tokenMint }, { encoding: 'jsonParsed' }] })
+    }).then(r => r.json());
+    const acc = res.result?.value?.[0];
+    const bal = acc?.account?.data?.parsed?.info?.tokenAmount?.amount;
+    if (bal && bal !== '0') return bal;
+  } catch {}
+
+  // Method 2: Helius DAS searchAssets (fallback)
+  try {
+    const res = await fetch(RPC, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'searchAssets',
+        params: { ownerAddress: WALLET.publicKey.toBase58(), tokenType: 'fungible' } })
+    }).then(r => r.json());
+    const item = res.result?.items?.find(a => a.id === tokenMint);
+    if (item?.token_info?.balance) return String(item.token_info.balance);
+  } catch {}
+
+  return '0';
 }
 
 async function scanPumpFun() {
@@ -232,26 +250,22 @@ async function main() {
       await log('analysis', `Monitoring $${target.symbol}... TP: +${TP_PCT}% | SL: ${SL_PCT}%`);
       const holdStart = Date.now();
       let sold = false;
+      const boughtTokens = buyResult.outAmount; // tokens we expect to hold
+
+      // Wait for tx to settle before checking
+      await new Promise(r => setTimeout(r, 8000));
 
       while (Date.now() - holdStart < MAX_HOLD && !sold) {
-        await new Promise(r => setTimeout(r, 10000)); // check every 10s
+        // Get token balance — try multiple methods, fall back to buy amount
+        let tokenBal = await getTokenBalance(target.mint);
+        if (!tokenBal || tokenBal === '0') tokenBal = boughtTokens;
 
-        // Get current price via Jupiter quote
-        const checkLamports = Math.floor(TRADE_SIZE * LAMPORTS_PER_SOL);
-        const priceQuote = await fetch(`https://lite-api.jup.ag/swap/v1/quote?inputMint=${SOL_MINT}&outputMint=${target.mint}&amount=${checkLamports}&slippageBps=500`).then(r => r.json()).catch(() => null);
-
-        if (!priceQuote || priceQuote.error) continue;
-
-        // Compare: how much SOL would we get if we sold now?
-        const tokenBal = await getTokenBalance(target.mint);
-        if (!tokenBal || tokenBal === '0') {
-          await log('analysis', `No tokens found. May have been auto-sold or transferred.`);
-          sold = true;
-          break;
-        }
-
+        // Get sell quote to check current value
         const sellQuote = await fetch(`https://lite-api.jup.ag/swap/v1/quote?inputMint=${target.mint}&outputMint=${SOL_MINT}&amount=${tokenBal}&slippageBps=500`).then(r => r.json()).catch(() => null);
-        if (!sellQuote || sellQuote.error) continue;
+        if (!sellQuote || sellQuote.error) {
+          await new Promise(r => setTimeout(r, 10000));
+          continue;
+        }
 
         const currentValue = Number(sellQuote.outAmount) / LAMPORTS_PER_SOL;
         const unrealizedPnl = ((currentValue - TRADE_SIZE) / TRADE_SIZE) * 100;
@@ -259,17 +273,32 @@ async function main() {
 
         await log('analysis', `$${target.symbol} ${elapsed}s: worth ~${currentValue.toFixed(4)} SOL (${unrealizedPnl >= 0 ? '+' : ''}${unrealizedPnl.toFixed(1)}%)`);
 
+        let shouldSell = false;
+        let reason = '';
+
         if (unrealizedPnl >= TP_PCT) {
-          await log('decision', `TAKE PROFIT triggered at +${unrealizedPnl.toFixed(1)}%`);
-          const sellResult = await sell(target.mint, tokenBal);
+          reason = `TP hit: +${unrealizedPnl.toFixed(1)}%`;
+          shouldSell = true;
+        } else if (unrealizedPnl <= SL_PCT) {
+          reason = `SL hit: ${unrealizedPnl.toFixed(1)}%`;
+          shouldSell = true;
+        }
+
+        if (shouldSell) {
+          await log('decision', `${reason}. Selling $${target.symbol}...`);
+          // Re-fetch actual balance for sell
+          const realBal = await getTokenBalance(target.mint);
+          const sellAmount = (realBal && realBal !== '0') ? realBal : tokenBal;
+
+          const sellResult = await sell(target.mint, sellAmount);
           if (sellResult) {
             const pnl = sellResult.solOut - TRADE_SIZE;
             const pnlPct = (pnl / TRADE_SIZE) * 100;
             pnlThisSession += pnl;
             await log('result', `SELL: $${target.symbol} for ${sellResult.solOut.toFixed(4)} SOL | PnL: ${pnl >= 0 ? '+' : ''}${pnl.toFixed(4)} SOL (${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(1)}%)`);
-            await recordTrade('sell', target.mint, target.symbol, target.name, sellResult.solOut, tokenBal,
+            await recordTrade('sell', target.mint, target.symbol, target.name, sellResult.solOut, sellAmount,
               target.bonding, target.mcap, target.replies, Math.round(pnl * 10000) / 10000, Math.round(pnlPct * 10) / 10, sellResult.sig,
-              `TP hit: +${pnlPct.toFixed(1)}%. Held ${elapsed}s.`);
+              `${reason}. Held ${elapsed}s.`);
 
             if (pnl > 0) {
               const rule = `$${target.symbol} at ${target.bonding}% bonding with ${target.replies} replies, accel +${target.accel}% = +${pnlPct.toFixed(1)}% profit in ${elapsed}s. ${target.strategy} strategy works here.`;
@@ -277,28 +306,30 @@ async function main() {
                 [`s_${Date.now()}`, rule, `$${target.symbol} +${pnlPct.toFixed(1)}%`]);
               await log('learn', `NEW RULE: ${rule}`);
             }
-          }
-          sold = true;
-        } else if (unrealizedPnl <= SL_PCT) {
-          await log('decision', `STOP LOSS triggered at ${unrealizedPnl.toFixed(1)}%`);
-          const sellResult = await sell(target.mint, tokenBal);
-          if (sellResult) {
-            const pnl = sellResult.solOut - TRADE_SIZE;
-            const pnlPct = (pnl / TRADE_SIZE) * 100;
-            pnlThisSession += pnl;
-            await log('result', `SELL: $${target.symbol} for ${sellResult.solOut.toFixed(4)} SOL | PnL: ${pnl >= 0 ? '+' : ''}${pnl.toFixed(4)} SOL (${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(1)}%)`);
-            await recordTrade('sell', target.mint, target.symbol, target.name, sellResult.solOut, tokenBal,
-              target.bonding, target.mcap, target.replies, Math.round(pnl * 10000) / 10000, Math.round(pnlPct * 10) / 10, sellResult.sig,
-              `SL hit: ${pnlPct.toFixed(1)}%. Held ${elapsed}s. Lesson: ${target.replies < 10 ? 'low reply count was a warning' : 'momentum faded'}.`);
+          } else {
+            await log('error', `Sell failed. Retrying...`);
+            await new Promise(r => setTimeout(r, 3000));
+            const retry = await sell(target.mint, sellAmount);
+            if (retry) {
+              const pnl = retry.solOut - TRADE_SIZE;
+              const pnlPct = (pnl / TRADE_SIZE) * 100;
+              pnlThisSession += pnl;
+              await log('result', `SELL (retry): $${target.symbol} for ${retry.solOut.toFixed(4)} SOL | PnL: ${pnl >= 0 ? '+' : ''}${pnl.toFixed(4)} SOL`);
+              await recordTrade('sell', target.mint, target.symbol, target.name, retry.solOut, sellAmount,
+                target.bonding, target.mcap, target.replies, Math.round(pnl * 10000) / 10000, Math.round(pnlPct * 10) / 10, retry.sig, `Retry sell. ${reason}.`);
+            }
           }
           sold = true;
         }
+
+        await new Promise(r => setTimeout(r, 10000)); // check every 10s
       }
 
       // Force sell if still holding after MAX_HOLD
       if (!sold) {
         await log('decision', `Max hold time (${MAX_HOLD/1000}s) reached. Force selling $${target.symbol}.`);
-        const tokenBal = await getTokenBalance(target.mint);
+        let tokenBal = await getTokenBalance(target.mint);
+        if (!tokenBal || tokenBal === '0') tokenBal = boughtTokens;
         if (tokenBal && tokenBal !== '0') {
           const sellResult = await sell(target.mint, tokenBal);
           if (sellResult) {
@@ -309,6 +340,8 @@ async function main() {
             await recordTrade('sell', target.mint, target.symbol, target.name, sellResult.solOut, tokenBal,
               target.bonding, target.mcap, target.replies, Math.round(pnl * 10000) / 10000, Math.round(pnlPct * 10) / 10, sellResult.sig,
               `Time exit after ${MAX_HOLD/1000}s. PnL: ${pnlPct.toFixed(1)}%.`);
+          } else {
+            await log('error', `Force sell failed. Tokens may be stuck. Mint: ${target.mint}`);
           }
         }
       }
