@@ -49,7 +49,7 @@ export default function Home() {
 
   // Poll stats
   useEffect(() => {
-    const load = () => fetch('/api/stats').then(r => r.json()).then(setStats).catch(() => {})
+    const load = () => fetch(`/api/stats?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).then(setStats).catch(() => {})
     load()
     const i = setInterval(load, 10000)
     return () => clearInterval(i)
@@ -59,8 +59,8 @@ export default function Home() {
   useEffect(() => {
     const load = () => {
       const since = lastThinkingRef.current
-      const url = since ? `/api/thinking?since=${new Date(since).getTime()}` : '/api/thinking?limit=50'
-      fetch(url).then(r => r.json()).then(data => {
+      const url = since ? `/api/thinking?since=${new Date(since).getTime()}&t=${Date.now()}` : `/api/thinking?limit=50&t=${Date.now()}`
+      fetch(url, { cache: 'no-store' }).then(r => r.json()).then(data => {
         if (data.logs?.length) {
           setThinking(prev => {
             const ids = new Set(prev.map(t => t.id))
