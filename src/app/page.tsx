@@ -501,9 +501,20 @@ export default function Home() {
         )}
 
         <footer style={{ textAlign: 'center', padding: '32px 0 20px', borderTop: '1px solid #1a1c28', marginTop: 32 }}>
+          <div style={{ marginBottom: 14 }}>
+            <a href="https://pump.fun/coin/GieUdeL54vdmTiZgYqvdkpmypRvFFSwb84t7V5Sypump" target="_blank" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px',
+              background: 'rgba(0,230,118,0.08)', border: '1px solid rgba(0,230,118,0.2)',
+              borderRadius: 8, textDecoration: 'none', fontFamily: 'monospace'
+            }}>
+              <span style={{ color: '#00e676', fontWeight: 800, fontSize: 13 }}>$RETARD</span>
+              <span style={{ color: '#3a3d52', fontSize: 10 }}>GieUdeL5...Sypump</span>
+              <span style={{ color: '#5a5e72', fontSize: 10, background: '#1a1c28', padding: '2px 6px', borderRadius: 4 }}>pump.fun</span>
+            </a>
+          </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 10 }}>
             <a href="https://x.com/retardbotfun" target="_blank" style={{ color: '#3a3d52', textDecoration: 'none', fontSize: 12, fontFamily: 'monospace' }}>twitter</a>
-            <a href="https://pump.fun" target="_blank" style={{ color: '#3a3d52', textDecoration: 'none', fontSize: 12, fontFamily: 'monospace' }}>pump.fun</a>
+            <a href="https://pump.fun/coin/GieUdeL54vdmTiZgYqvdkpmypRvFFSwb84t7V5Sypump" target="_blank" style={{ color: '#3a3d52', textDecoration: 'none', fontSize: 12, fontFamily: 'monospace' }}>$RETARD</a>
             <a href="/docs" style={{ color: '#3a3d52', textDecoration: 'none', fontSize: 12, fontFamily: 'monospace' }}>docs</a>
           </div>
           <p style={{ color: '#1a1c28', fontSize: 11, fontFamily: 'monospace' }}>retardbot.fun -- not financial advice. the bot is literally retarded.</p>
