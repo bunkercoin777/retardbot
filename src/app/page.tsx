@@ -100,6 +100,10 @@ export default function Home() {
           <div style={{ fontSize: 12, color: '#5a5e72', textAlign: 'right' }}>
             <div style={{ fontFamily: 'monospace', color: '#8b8fa3' }}>wallet: funding...</div>
           </div>
+          <a href="/docs" style={{
+            color: '#5a5e72', textDecoration: 'none', fontSize: 12,
+            fontFamily: 'monospace', padding: '8px 12px'
+          }}>docs</a>
           <button style={{
             background: '#00e676', color: '#000', fontWeight: 800,
             border: 'none', borderRadius: 8, padding: '8px 18px',
