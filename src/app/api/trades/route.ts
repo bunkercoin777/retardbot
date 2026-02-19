@@ -6,6 +6,8 @@ import { NextResponse } from 'next/server'
 
 export async function GET() {
   const trades = await prisma.rbTrade.findMany({ orderBy: { createdAt: 'desc' }, take: 100 })
-  return NextResponse.json({ trades, total: trades.length })
+  return NextResponse.json({ trades, total: trades.length }, {
+    headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Pragma': 'no-cache' }
+  })
 }
 

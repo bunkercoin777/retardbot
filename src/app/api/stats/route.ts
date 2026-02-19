@@ -35,6 +35,7 @@ export async function GET() {
   })
   const isLive = !!recentThinking
 
+  const headers = { 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Pragma': 'no-cache' }
   return NextResponse.json({
     wallet: WALLET,
     balance: Math.round(balance * 10000) / 10000,
@@ -46,5 +47,5 @@ export async function GET() {
     biggestLoss: Math.round(worstTrade * 10) / 10,
     isLive,
     lastActivity: recentThinking?.createdAt || null
-  })
+  }, { headers })
 }

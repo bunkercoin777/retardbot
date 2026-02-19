@@ -13,6 +13,8 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'desc' },
     take: limit
   })
-  return NextResponse.json({ logs: logs.reverse() })
+  return NextResponse.json({ logs: logs.reverse() }, {
+    headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Pragma': 'no-cache' }
+  })
 }
 
