@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model RbTrade {
+  id             String   @id @default(cuid())
+  action         String
+  tokenMint      String
+  tokenSymbol    String
+  tokenName      String
+  amountSol      Float
+  tokenAmount    String
+  bondingProgress Float?
+  marketCap      Float?
+  replies        Int?
+  pnl            Float?
+  pnlPercent     Float?
+  txSignature    String?
+  reasoning      String?
+  createdAt      DateTime @default(now())
+
+  @@map("rb_trades")
+}
+
+model RbThinking {
+  id        String   @id @default(cuid())
+  type      String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@map("rb_thinking")
+}
+
+model RbStrategy {
+  id        String   @id @default(cuid())
+  rule      String
+  source    String
+  winRate   Float?
+  createdAt DateTime @default(now())
+
+  @@map("rb_strategies")
+}
+
+model RbBotState {
+  id        String   @id @default("singleton")
+  wallet    String
+  balance   Float    @default(0)
+  isLive    Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  @@map("rb_bot_state")
+}

@@ -8,8 +8,11 @@
     "start": "next start"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.2",
     "@solana/web3.js": "^1.98.4",
     "next": "15.3.9",
+    "pg": "^8.18.0",
+    "prisma": "^6.19.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
